@@ -16,8 +16,8 @@ def long_running_function(number):
 
 def setup_logging():
     import logging
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
+    logger = logging.getLogger("mylogger")
+    logger.setLevel(logging.ERROR)
 
     # handlers
     file_handler = logging.FileHandler("gpt_usage.log")
@@ -41,7 +41,7 @@ def setup_logging():
 def setup_app():
     import tkinter as tk
     from ttkbootstrap import Style
-    
+
     app = tk.Tk()
     app.title("Vernissage Chatbot")
     app.geometry("800x600")
