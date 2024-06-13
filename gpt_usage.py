@@ -100,10 +100,6 @@ def detect_prompt_injection(text)->bool:
     ]
     response = get_generic_model_response(messages)
 
-    import logging
-    logger = logging.getLogger("mylogger")
-    logger.critical(f"Prompt injection response: {response}")
-
     return response == "Y"
 
 def get_generic_model_response(messages, model="gpt-3.5-turbo", temperature=0, max_tokens=100):
