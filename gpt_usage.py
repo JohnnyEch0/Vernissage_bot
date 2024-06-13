@@ -9,12 +9,7 @@ _ = load_dotenv(find_dotenv()) # read local .env file
 
 client = openai.OpenAI()
 
-assistant_id = "asst_ysTuidcswz1rSfhJZwgGIjzR"
-
-try:
-    assistant = client.beta.assistants.retrieve(assistant_id)
-except Exception as e:
-    print(f"An error occurred while retrieving the assistant: {e}", file=sys.stderr)
+assistant = None
 
 # a thread can hold multiple messages
 thread = client.beta.threads.create()
@@ -58,9 +53,11 @@ def get_assistant_response(message):
 
 def check_assistant_exists(assistant_id):
     try:
-        response = client.beta.assistants.retrieve(assistant_id)
-        print("assistant found", response)
-        return True if response else False
+        fetch_ass = client.beta.assistants.retrieve(assistant_id)
+        print("assistant found", fetch_ass)
+        global assistant
+        assistant = fetch_ass
+        return True if fetch_ass else False
     except Exception as e:
         print(f"An error occurred while checking the assistant: {e}", file=sys.stderr)
         return False
