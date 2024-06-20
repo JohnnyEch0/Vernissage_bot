@@ -9,15 +9,11 @@ def timer_decorator(func):
         return result
     return wrapper
 
-@timer_decorator
-def long_running_function(number):
-    for _ in range(number):
-        pass
 
 def setup_logging():
     import logging
     logger = logging.getLogger("mylogger")
-    logger.setLevel(logging.ERROR)
+    logger.setLevel(logging.DEBUG)
 
     # handlers
     file_handler = logging.FileHandler("gpt_usage.log")
@@ -38,7 +34,7 @@ def setup_logging():
     return logger
 
 
-def setup_app():
+def setup_tkinter_app():
     import tkinter as tk
     from ttkbootstrap import Style
 

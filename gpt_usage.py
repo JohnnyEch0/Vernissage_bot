@@ -3,6 +3,8 @@ import os
 import sys
 from dotenv import load_dotenv, find_dotenv
 import helpers
+import logging
+logger = logging.getLogger("mylogger")
 
 _ = load_dotenv(find_dotenv()) # read local .env file
 
@@ -24,7 +26,7 @@ def get_assistant_response(message, assistant, thread, debug=False):
             )
 
     if debug:
-        import logging
+        
         logger = logging.getLogger("mylogger")
         messages = client.beta.threads.messages.list(
             thread_id=thread.id
@@ -52,12 +54,10 @@ def get_assistant_response(message, assistant, thread, debug=False):
             print(run.status)
             timeout_count += 1
 
-
 def check_assistant_exists(assistant_id):
     """Setup that is run before the main loop to check if the assistant exists.
     """
-    import logging
-    logger = logging.getLogger("mylogger")
+    
 
     try:
         fetch_ass = client.beta.assistants.retrieve(assistant_id)
@@ -68,16 +68,13 @@ def check_assistant_exists(assistant_id):
     logger.debug(f"assistant found,   {fetch_ass}")
 
     assistant = fetch_ass
-    # a thread can hold multiple messages
     thread = client.beta.threads.create()
 
     return assistant, thread
-    
 
 def check_user_input(text)->bool:
     moderation = client.moderations.create(input=text)
     moderations_output = moderation.results[0]
-    # check if the input got flagged
     if moderations_output.flagged:
         return True
     
