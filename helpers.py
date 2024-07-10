@@ -17,7 +17,7 @@ def setup_logging():
 
     # handlers
     file_handler = logging.FileHandler("gpt_usage.log")
-    file_handler.setLevel(logging.ERROR)
+    file_handler.setLevel(logging.DEBUG)
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.DEBUG)
 

@@ -39,8 +39,6 @@ def process_input_txt(input_txt, assistant, thread):
     # output.insert(tk.END, f"User: {input_txt}\n")
     app.output(response, "Assistant") 
 
-
-
 if __name__ == "__main__":
     # logging setup
     logger = helpers.setup_logging()

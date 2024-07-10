@@ -1,2 +1,12 @@
 .env
 __pycache__/
+dotenv.py
+**.mp3
+**.png
+**.db
+**.log
+**.sql
+**.txt
+**.asd
+.vscode/
+env/
