@@ -2,7 +2,7 @@ import os
 
 RELEVANT_FILES = ".mp3"
 # Get the current directory
-current_dir = os.getcwd()
+current_dir = os.path.join(os.getcwd(), "data")
 
 # Iterate through files in the current directory
 for filename in os.listdir(current_dir):

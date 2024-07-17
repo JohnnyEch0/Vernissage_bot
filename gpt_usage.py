@@ -78,7 +78,6 @@ def check_user_input(text)->bool:
     if moderations_output.flagged:
         return True
     
-
 def detect_prompt_injection(text)->bool:
 
     delimiter = "####"

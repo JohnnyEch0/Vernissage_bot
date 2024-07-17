@@ -14,8 +14,14 @@ logger = setup_logging()
 STEVEN_ID = "asst_BvCViX4J5fbyhJLZfJLVtwVW"
 MELINA_ID = "asst_cmK7Ou1cftZDqXZmj4lQmO4Y"
 DIALOGUE_AMOUNT = 8
+RESPONSE_DELIMITER = "####"
+SPEAKER_DELIMITER = "----"
+
+
 INTERVENING = True  # If True, get a user-intervention Input after each response.
-DEBUG = False
+DEBUG = False 
+AUDIO_STREAMING = False # If True, stream the responses to audio files
+SPEAKER_VOICES = ("echo", "nova")
 
 # OpenAI Setup
 client = OpenAI()
@@ -25,8 +31,8 @@ thread = client.beta.threads.create()
 
 agents = [steven, melina]
 
-def get_assistant_response(message, assistant, thread, debug=False, prompt_intervention=False):
-    if prompt_intervention:
+def get_assistant_response(message, assistant, thread):
+    if INTERVENING:
         response = get_prompt_intervention()
         if response != "":
             message_sys = client.beta.threads.messages.create(
@@ -75,29 +81,37 @@ def get_assistant_response(message, assistant, thread, debug=False, prompt_inter
 def main(response, thread, agents, speaker):
     counter = 0
     while True:
-        if counter > DIALOGUE_AMOUNT:
+        if counter == DIALOGUE_AMOUNT:
             break
         if speaker == agents[0]:
-            completion = get_assistant_response(response, agents[1], thread, DEBUG, INTERVENING)
+            completion = get_assistant_response(response, agents[1], thread)
             speaker = agents[1]
         else:
-            completion = get_assistant_response(response, agents[0], thread, DEBUG, INTERVENING )
+            completion = get_assistant_response(response, agents[0], thread )
             speaker = agents[0]
 
+        print(f"----Message Nr: {counter}/{DIALOGUE_AMOUNT-1}----")
         logger.debug(f"{speaker.name}: {completion}")
-        response = completion
+        
 
-        speech_file_path = Path(__file__).parent / f"speech{counter}.mp3"
-        response_audio = audio.speech.create(
-            model="tts-1",
-            voice="echo" if speaker == agents[0] else "nova",
-            input=f"{response}",
-            )
-        response_audio.stream_to_file(speech_file_path)
-
+        if AUDIO_STREAMING:
+            stream_response_to_audio(completion, speaker, counter)
+            
+        else:
+            with open("gpt_usage_last_conver.txt", "a") as file:
+                file.write(f"{speaker.name}:{SPEAKER_DELIMITER} {completion}{RESPONSE_DELIMITER} \n")
+        
 
         counter += 1
-        # time.sleep(1)
+
+def stream_response_to_audio(response, speaker, counter):
+    AUDIO_STREAMING_PATH = Path(__file__).parent / f"data/speech{counter}.mp3"
+    response_audio = audio.speech.create(
+            model="tts-1",
+            voice= SPEAKER_VOICES[0] if speaker == agents[0] else SPEAKER_VOICES[1],
+            input=f"{response}",
+            )
+    response_audio.stream_to_file(AUDIO_STREAMING_PATH)
 
 def get_prompt_intervention():
     message = f"Prompt - Intervention, would you like the system a specific way in which to react? \n"
@@ -106,10 +120,13 @@ def get_prompt_intervention():
         sys.exit("User ended the program")
     return response
 
-
 if __name__ == "__main__":
     message = "And with that, im gonna hand the conversation over to Steven and Melina, thank you so much!"
-    # message = "Und damit übergebe ich das Gespräch an Steven und Melina, vielen Dank euch!"
+
+    if not AUDIO_STREAMING:
+        with open("gpt_usage_last_conver.txt", "w") as file:
+            file.write("")
+        
     main(message, thread, agents, "Moderator")
     sys.exit(0)
 
