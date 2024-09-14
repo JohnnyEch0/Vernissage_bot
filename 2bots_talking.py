@@ -6,48 +6,66 @@ from pathlib import Path
 from random import choice
 from helpers import setup_logging
 
-from dotenv import OPEN_AI_KEY
+from dotenv import load_dotenv
+load_dotenv()
+
+
+import assistants
 
 
 logger = setup_logging()
 
 STEVEN_ID = "asst_BvCViX4J5fbyhJLZfJLVtwVW"
 MELINA_ID = "asst_cmK7Ou1cftZDqXZmj4lQmO4Y"
-DIALOGUE_AMOUNT = 8
+DIALOGUE_AMOUNT = 10
 RESPONSE_DELIMITER = "####"
 SPEAKER_DELIMITER = "----"
 
 
-INTERVENING = True  # If True, get a user-intervention Input after each response.
+INTERVENING = False  # If True, get a user-intervention Input after each response.
 DEBUG = False 
-AUDIO_STREAMING = False # If True, stream the responses to audio files
+AUDIO_STREAMING = True # If True, stream the responses to audio files
 SPEAKER_VOICES = ("echo", "nova")
 
 # OpenAI Setup
 client = OpenAI()
-steven = client.beta.assistants.retrieve(STEVEN_ID)
-melina = client.beta.assistants.retrieve(MELINA_ID)
 thread = client.beta.threads.create()
 
-agents = [steven, melina]
+# Specification
+talker_1_instructions = "You are a far-right proto-fascist person in a non-professional setting, talk like a redditor."
+talker_2_instructions = "You are a far-left antifascist person in a bad spot in their live, but you try to cover it up with a layed-back attitude."
+additional_instructions = "You are to have a conversation with depth, try to remember and talk upon the things the other person says."
+conversation_name = "Last Weekend 1"
+intro_message = "Start a conversation about how bad the tram system has become."
+intro_speaker = None
+
+talker_1 = assistants.create_assistant(client, talker_1_instructions + additional_instructions)
+talker_2 = assistants.create_assistant(client, talker_2_instructions + additional_instructions)
+talkers = [talker_1, talker_2]
+
+
+ 
 
 def get_assistant_response(message, assistant, thread):
+    # Chance for intervention via command line input
     if INTERVENING:
         response = get_prompt_intervention()
         if response != "":
+            # add a system message
             message_sys = client.beta.threads.messages.create(
                 thread_id=thread.id,
                 role="assistant",
                 content=response
                 )
 
-
+    
     message = client.beta.threads.messages.create(
         thread_id=thread.id,
         role="user",
         content=message
         )
 
+    print("starting the run with the last message")
     run = client.beta.threads.runs.create_and_poll(
             thread_id=thread.id,
             assistant_id=assistant.id,
@@ -80,6 +98,10 @@ def get_assistant_response(message, assistant, thread):
 
 def main(response, thread, agents, speaker):
     counter = 0
+    if not response:
+        print("response/message is missing, using default instead")
+        response = "Start an iteresting conversation."
+
     while True:
         if counter == DIALOGUE_AMOUNT:
             break
@@ -101,17 +123,20 @@ def main(response, thread, agents, speaker):
             with open("gpt_usage_last_conver.txt", "a") as file:
                 file.write(f"{speaker.name}:{SPEAKER_DELIMITER} {completion}{RESPONSE_DELIMITER} \n")
         
+        response = completion
 
         counter += 1
 
 def stream_response_to_audio(response, speaker, counter):
     AUDIO_STREAMING_PATH = Path(__file__).parent / f"data/speech{counter}.mp3"
+    print("creating audio from response")
     response_audio = audio.speech.create(
             model="tts-1",
-            voice= SPEAKER_VOICES[0] if speaker == agents[0] else SPEAKER_VOICES[1],
+            voice= SPEAKER_VOICES[0] if speaker == talkers[0] else SPEAKER_VOICES[1],
             input=f"{response}",
             )
     response_audio.stream_to_file(AUDIO_STREAMING_PATH)
+    print("Audio succesfully created")
 
 def get_prompt_intervention():
     message = f"Prompt - Intervention, would you like the system a specific way in which to react? \n"
@@ -121,12 +146,13 @@ def get_prompt_intervention():
     return response
 
 if __name__ == "__main__":
-    message = "And with that, im gonna hand the conversation over to Steven and Melina, thank you so much!"
-
     if not AUDIO_STREAMING:
         with open("gpt_usage_last_conver.txt", "w") as file:
             file.write("")
         
-    main(message, thread, agents, "Moderator")
+    main(intro_message, thread, talkers, intro_speaker)
+    from data import mp3_joiner, delete_files
+    mp3_joiner.stitch_mp3_files("99audio" + conversation_name + ".mp3")
+    delete_files.main()
     sys.exit(0)
 
